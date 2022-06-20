@@ -9,7 +9,6 @@ on:
       - prod
       paths-ignore:
       - '.images/**'
-      - '.github/**'
   pull_request:
       branches:
       - 'feature/**'
@@ -17,7 +16,6 @@ on:
       - 'bugfix/**'
       paths-ignore:
       - '.images/**'
-      - '.github/**'
 
 jobs:
   terraform:
