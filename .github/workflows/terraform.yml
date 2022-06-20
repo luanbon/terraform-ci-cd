@@ -27,47 +27,35 @@ jobs:
     # environment: development
     env:
       BRANCH_NAME: ${{ github.base_ref || github.ref_name }}
+    environment: 
+      name: ${{ env.BRANCH_NAME }}
     steps:
-      - name: Checkout
+      - name: checkout
         uses: actions/checkout@v3
-      # - name: Get branch name (push)
-      #   if: github.event_name != 'pull_request'
-      #   shell: bash
-      #   run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
-      # - name: Get branch name (pull request)
-      #   if: github.event_name == 'pull_request'
-      #   shell: bash
-      #   run: echo "BRANCH_NAME=$(echo ${GITHUB_HEAD_REF} | tr / -)" >> $GITHUB_ENV
-      # - uses: mad9000/actions-find-and-replace-string@2
-      #   if: ${{ github.event_name != 'pull_request' }}
-      #   name: get branch name
-      #   id: get_branch_name
-      #   with:
-      #     source: "${{ github.ref }}"
-      #     find: "refs/heads/"
-      #     replace: ""
-      # - uses: mad9000/actions-find-and-replace-string@2
-      #   if: ${{ github.event_name == 'pull_request' }}
-      #   name: get pr target branch name
-      #   id: get_pr_target_branch_name
-      #   with:
-      #     source: "${{ github.base_ref }}"
-      #     find: "refs/heads/"
-      #     replace: ""
-      - name: environment variables configuration for non-prod
+      - name: environment variables configuration for ${{ env.BRANCH_NAME }}
         if: env.BRANCH_NAME != 'production'
         run: |
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.NONPROD_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.NONPROD_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
-          echo "TEST=NON-PROD" >> $GITHUB_ENV
           echo "STAGE=${{ env.BRANCH_NAME }}" >> $GITHUB_ENV
-      - name: environment variables configuration for prod
-        if: env.BRANCH_NAME == 'production'
-        run: |
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
-          echo "TEST=PROD" >> $GITHUB_ENV
-          echo "STAGE=${{ env.BRANCH_NAME }}" >> $GITHUB_ENV
+
+          if [[ env.BRANCH_NAME != 'production' ]]; then
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.NONPROD_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.NONPROD_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+          else
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+          fi
+      # - name: environment variables configuration for ${{ env.BRANCH_NAME }}
+      #   if: env.BRANCH_NAME != 'production'
+      #   run: |
+      #     echo "AWS_ACCESS_KEY_ID=${{ secrets.NONPROD_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+      #     echo "AWS_SECRET_ACCESS_KEY=${{ secrets.NONPROD_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+      #     echo "STAGE=${{ env.BRANCH_NAME }}" >> $GITHUB_ENV
+      # - name: environment variables configuration for prod
+      #   if: env.BRANCH_NAME == 'production'
+      #   run: |
+      #     echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+      #     echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+      #     echo "STAGE=${{ env.BRANCH_NAME }}" >> $GITHUB_ENV
       - name: display variables
         if:  env.AWS_ACCESS_KEY_ID != null && env.AWS_SECRET_ACCESS_KEY != null
         run: |
@@ -75,25 +63,25 @@ jobs:
           echo "$STAGE"
       # - name: Setup tmate session
       #   uses: mxschmitt/action-tmate@v3
-      # - name: install dependencies
-      #   run: |
-      #     sudo apt update && sudo apt install python3-pip python3-setuptools jq
-      #     sudo pip3 install terraenv awscli
-      #     sudo terraenv terraform install
-      #     sudo terraenv terragrunt install
-      # - name: validate terraform
-      #   if: ${{ github.event_name == 'pull_request' }}
-      #   run: |
-      #     set -e
-      #     make fmt-check
-      #     make init validate-terraform
-      # - name: plan
-      #   if: ${{ github.event_name == 'pull_request' }}
-      #   run: |
-      #     set -e
-      #     make plan
-      # - name: apply
-      #   if: ${{ github.event_name == 'push' }}
-      #   run: |
-      #     set -e
-      #     make apply-ci
+      - name: install dependencies
+        run: |
+          sudo apt update && sudo apt install python3-pip python3-setuptools jq
+          sudo pip3 install terraenv awscli
+          sudo terraenv terraform install
+          sudo terraenv terragrunt install
+      - name: validate terraform
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          set -e
+          make fmt-check
+          make init validate-terraform
+      - name: plan
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          set -e
+          make plan
+      - name: apply
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          set -e
+          make apply-ci
