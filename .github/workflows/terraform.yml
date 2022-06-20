@@ -2,25 +2,25 @@ name: Terraform CI/CD
 on:
   workflow_dispatch:
   push:
-      branches:
+    branches:
       - develop
       - qa
       - staging
       - prod
-      paths-ignore:
-      - '.images/**'
+    paths-ignore:
+      - ".images/**"
   pull_request:
-      types: [opened, reopened]
-      branches:
-        - develop
-        - qa
-        - staging
-        - prod
-        - 'feature/**'
-        - 'hotfix/**'
-        - 'bugfix/**'
-      paths-ignore:
-        - '.images/**'
+    types: [opened, reopened]
+    branches:
+      - develop
+      - qa
+      - staging
+      - prod
+      - "feature/**"
+      - "hotfix/**"
+      - "bugfix/**"
+    paths-ignore:
+      - ".images/**"
 
 jobs:
   terraform:
@@ -33,8 +33,8 @@ jobs:
         id: get_branch_name
         with:
           source: ${{ github.ref }}
-          find: 'refs/heads/'
-          replace: ''
+          find: "refs/heads/"
+          replace: ""
       - name: environment variables configuration for non-prod
         if: ${{ steps.get_branch_name.outputs.value != 'production' }}
         run: |
