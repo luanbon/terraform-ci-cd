@@ -71,15 +71,15 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         run: |
           set -e
-          make fmt-check
-          make init validate-terraform
+          sudo make fmt-check
+          sudo make init validate-terraform
       - name: plan
         if: ${{ github.event_name == 'pull_request' }}
         run: |
           set -e
-          make plan
+          sudo make plan
       - name: apply
         if: ${{ github.event_name == 'push' }}
         run: |
           set -e
-          make apply-ci
+          sudo make apply-ci
