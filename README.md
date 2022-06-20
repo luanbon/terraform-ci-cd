@@ -1,4 +1,4 @@
-# Terraform
+# Terraform CI/CD
 
 ## Prerequisites
 * You must have an IAM user and an IAM access key pair associated with this user.
@@ -7,7 +7,6 @@
     * `jq`
     * `terraform`
     * `terragrunt`
-    * `python3 & pip3`
     * `terraenv`
 ​
 ### Set up a local CLI profile to use your AWS account.
