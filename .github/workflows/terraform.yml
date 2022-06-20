@@ -1,21 +1,26 @@
 name: Terraform CI/CD
-on: [pull_request, workflow_dispatch]
-  # workflow_dispatch:
-  # push:
-  #     branches:
-  #     - develop
-  #     - qa
-  #     - staging
-  #     - prod
-  #     paths-ignore:
-  #     - '.images/**'
-  # pull_request:
-  #     branches:
-  #     - 'feature/**'
-  #     - 'hotfix/**'
-  #     - 'bugfix/**'
-  #     paths-ignore:
-  #     - '.images/**'
+on:
+  workflow_dispatch:
+  push:
+      branches:
+      - develop
+      - qa
+      - staging
+      - prod
+      paths-ignore:
+      - '.images/**'
+  pull_request:
+      types: [opened, reopened]
+      branches:
+        - develop
+        - qa
+        - staging
+        - prod
+        - 'feature/**'
+        - 'hotfix/**'
+        - 'bugfix/**'
+      paths-ignore:
+        - '.images/**'
 
 jobs:
   terraform:
@@ -48,8 +53,8 @@ jobs:
       #     echo "$AWS_ACCESS_KEY_ID"
       #     echo "$TEST"
       #     echo "$STAGE"
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
       - name: install dependencies
         run: |
           sudo apt update && sudo apt install python3-pip python3-setuptools jq

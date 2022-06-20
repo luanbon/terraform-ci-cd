@@ -1,4 +1,4 @@
-STAGE?=dev
+STAGE?=develop
 
 apply console destroy graph plan output providers show refresh:
 	cd variables/$(STAGE) && terragrunt $@
