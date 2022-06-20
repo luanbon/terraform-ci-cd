@@ -65,3 +65,8 @@ jobs:
         run: |
           set -e
           make plan
+      - name: apply
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          set -e
+          make apply-ci
