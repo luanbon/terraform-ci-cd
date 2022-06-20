@@ -45,8 +45,8 @@ jobs:
   terraform:
     runs-on: ubuntu-latest
     needs: set_environment
-    environment: 
-      name: ${{ needs.set_environment.outputs.stage }}
+    # environment: 
+    #   name: ${{ needs.set_environment.outputs.stage }}
     env:
       STAGE: ${{ needs.set_environment.outputs.stage }}
       AWS_ACCESS_KEY_ID: ${{ secrets[needs.set_environment.outputs.aws_key] }}
@@ -59,14 +59,14 @@ jobs:
           echo "$STAGE"
           echo "$AWS_ACCESS_KEY_ID"
           echo "$AWS_SECRET_ACCESS_KEY"
-      # - name: Setup tmate session
-      #   uses: mxschmitt/action-tmate@v3
       - name: install dependencies
         run: |
           sudo apt update && sudo apt install python3-pip python3-setuptools jq
           sudo pip3 install terraenv awscli
           sudo terraenv terraform install
           sudo terraenv terragrunt install
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: validate terraform
         if: ${{ github.event_name == 'pull_request' }}
         run: |
