@@ -35,7 +35,7 @@ jobs:
           echo "AWS_SECRET_ACCESS_KEY=${{ secrets.NONPROD_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
           echo "TEST=BLEVISK" >> $GITHUB_ENV
           echo "STAGE=${{ steps.get_branch_name.outputs.value }}" >> $GITHUB_ENV
-      - name: environment variables configuration for non-prod
+      - name: environment variables configuration for prod
         if: ${{ steps.get_branch_name.outputs.value == 'production' }}
         run: |
           echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
@@ -46,6 +46,8 @@ jobs:
       #     echo "$AWS_ACCESS_KEY_ID"
       #     echo "$TEST"
       #     echo "$STAGE"
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: install dependencies
         run: |
           sudo apt update && sudo apt install python3-pip python3-setuptools jq
