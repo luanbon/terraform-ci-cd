@@ -28,10 +28,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - uses: mad9000/actions-find-and-replace-string@2
+        if: ${{ github.event_name == 'pull_request' }}
+        name: get pr target branch name
+        id: get_branch_name
+        with:
+          source: "${{ github.base_ref }}"
+          find: "refs/heads/"
+          replace: ""
+      - uses: mad9000/actions-find-and-replace-string@2
+        if: ${{ github.event_name == 'push' }}
         name: get branch name
         id: get_branch_name
         with:
-          source: ${{ github.ref }}
+          source: "${{ github.ref }}"
           find: "refs/heads/"
           replace: ""
       - name: environment variables configuration for non-prod
