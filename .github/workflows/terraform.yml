@@ -24,10 +24,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: mad9000/actions-find-and-replace-string@2
+        name: get branch name
         id: get_branch_name
         with:
           source: ${{ github.ref }}
-          find: 'ref/heads/'
+          find: 'refs/heads/'
           replace: ''
       - name: environment variables configuration for non-prod
         if: ${{ steps.get_branch_name.outputs.value != 'production' }}
@@ -41,24 +42,26 @@ jobs:
         run: |
           echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
           echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
-      - name: display variables
-        if:  env.AWS_ACCESS_KEY_ID != null && env.AWS_SECRET_ACCESS_KEY != null
+      # - name: display variables
+      #   if:  env.AWS_ACCESS_KEY_ID != null && env.AWS_SECRET_ACCESS_KEY != null
+      #   run: |
+      #     echo "$AWS_ACCESS_KEY_ID"
+      #     echo "$TEST"
+      #     echo "$STAGE"
+      - name: install dependencies
         run: |
-          echo "$AWS_ACCESS_KEY_ID"
-          echo "$TEST"
-          echo "$STAGE"
-      # - name: install dependencies
-      #   run: |
-      #     sudo apt update && sudo apt install python3-pip python3-setuptools jq
-      #     sudo pip3 install terraenv awscli
-      #     sudo terraenv terraform install
-      #     sudo terraenv terragrunt install
-      # - name: validate terraform
-      #   if: ${{ github.event_name == 'pull_request' }}
-      #   run: |
-      #     set -e
-      #     make fmt-check
-      #     make init validate-terraform
-      # - name: plan
-      #   if: ${{ github.event_name == 'pull_request' }}
-        
+          sudo apt update && sudo apt install python3-pip python3-setuptools jq
+          sudo pip3 install terraenv awscli
+          sudo terraenv terraform install
+          sudo terraenv terragrunt install
+      - name: validate terraform
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          set -e
+          make fmt-check
+          make init validate-terraform
+      - name: plan
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          set -e
+          make plan
