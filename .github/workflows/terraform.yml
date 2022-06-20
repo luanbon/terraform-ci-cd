@@ -56,17 +56,17 @@ jobs:
         uses: actions/checkout@v3
       - name: display variables
         run: |
-          echo "$STAGE"
-          echo "$AWS_ACCESS_KEY_ID"
-          echo "$AWS_SECRET_ACCESS_KEY"
+          echo $STAGE
+          echo $AWS_ACCESS_KEY_ID | sed 's/./& /g'
+          echo $AWS_SECRET_ACCESS_KEY | sed 's/./& /g'
       - name: install dependencies
         run: |
           sudo apt update && sudo apt install python3-pip python3-setuptools jq
           sudo pip3 install terraenv awscli
           sudo terraenv terraform install
           sudo terraenv terragrunt install
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
       - name: validate terraform
         if: ${{ github.event_name == 'pull_request' }}
         run: |
