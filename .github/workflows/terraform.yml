@@ -52,6 +52,11 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::718512860394:role/github-actions-role
+          aws-region: us-east-1
       - name: install dependencies
         run: |
           sudo apt update && sudo apt install python3-pip python3-setuptools jq
@@ -60,17 +65,9 @@ jobs:
           sudo terraenv terragrunt install
       # - name: Setup tmate session
       #   uses: mxschmitt/action-tmate@v3
-      # - name: Configure AWS Credentials
-      #   uses: aws-actions/configure-aws-credentials@v1
-      #   with:
-      #     aws-access-key-id: ${{ secrets[needs.set_environment.outputs.aws_key] }}
-      #     aws-secret-access-key: ${{ secrets[needs.set_environment.outputs.aws_key_secret] }}"
-      #     aws-region: us-east-1
       - name: validate terraform
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          export AWS_ACCESS_KEY_ID=${{ secrets[needs.set_environment.outputs.aws_key] }}
-          export AWS_SECRET_ACCESS_KEY=${{ secrets[needs.set_environment.outputs.aws_key_secret] }}
           set -e
           sudo make fmt-check
           sudo make init validate-terraform
