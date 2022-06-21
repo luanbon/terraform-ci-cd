@@ -80,7 +80,7 @@ jobs:
       - name: plan
         id: plan
         if: ${{ github.event_name == 'pull_request' }}
-        run: make plan
+        run: make plan-ci
       - uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
         env:
