@@ -49,16 +49,9 @@ jobs:
     #   name: ${{ needs.set_environment.outputs.stage }}
     env:
       STAGE: ${{ needs.set_environment.outputs.stage }}
-      AWS_ACCESS_KEY_ID: ${{ secrets[needs.set_environment.outputs.aws_key] }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets[needs.set_environment.outputs.aws_key_secret] }}"
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: display variables
-        run: |
-          echo $STAGE
-          echo $AWS_ACCESS_KEY_ID | sed 's/./& /g'
-          echo $AWS_SECRET_ACCESS_KEY | sed 's/./& /g'
       - name: install dependencies
         run: |
           sudo apt update && sudo apt install python3-pip python3-setuptools jq
@@ -67,6 +60,12 @@ jobs:
           sudo terraenv terragrunt install
       # - name: Setup tmate session
       #   uses: mxschmitt/action-tmate@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets[needs.set_environment.outputs.aws_key] }}
+          aws-secret-access-key: ${{ secrets[needs.set_environment.outputs.aws_key_secret] }}"
+          aws-region: us-east-1
       - name: validate terraform
         if: ${{ github.event_name == 'pull_request' }}
         run: |
@@ -81,6 +80,6 @@ jobs:
           sudo make plan
       - name: apply
         if: ${{ github.event_name == 'push' }}
-        run: |
+        run: |car
           set -e
           sudo make apply-ci
