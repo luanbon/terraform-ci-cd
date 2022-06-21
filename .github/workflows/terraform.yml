@@ -80,6 +80,6 @@ jobs:
           sudo make plan
       - name: apply
         if: ${{ github.event_name == 'push' }}
-        run: |car
+        run: |
           set -e
           sudo make apply-ci
