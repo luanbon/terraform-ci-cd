@@ -44,14 +44,18 @@ jobs:
         fi
   terraform:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     needs: set_environment
     # environment: 
     #   name: ${{ needs.set_environment.outputs.stage }}
     env:
       STAGE: ${{ needs.set_environment.outputs.stage }}
     steps:
+      # Test V3
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
