@@ -44,9 +44,7 @@ jobs:
         fi
   terraform:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: write
+    permissions: write-all
     needs: set_environment
     # environment: 
     #   name: ${{ needs.set_environment.outputs.stage }}
