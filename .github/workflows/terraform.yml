@@ -69,7 +69,7 @@ jobs:
       - name: set aws credentials
         run: |
           export AWS_ACCESS_KEY_ID=${{ secrets[needs.set_environment.outputs.aws_key] }}
-          export AWS_SECRET_ACCESS_KEY=${{ secrets[needs.set_environment.outputs.aws_key_secret] }}"
+          export AWS_SECRET_ACCESS_KEY=${{ secrets[needs.set_environment.outputs.aws_key_secret] }}
       - name: validate terraform
         if: ${{ github.event_name == 'pull_request' }}
         run: |
