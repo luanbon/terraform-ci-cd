@@ -55,7 +55,7 @@ jobs:
     steps:
       # Test V3
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -67,21 +67,53 @@ jobs:
           sudo pip3 install terraenv awscli
           terraenv terraform install
           terraenv terragrunt install
-      # - name: Setup tmate session
-      #   uses: mxschmitt/action-tmate@v3
-      - name: validate terraform
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          set -e
-          make fmt-check
-          make init validate-terraform
+      - name: format
+        id: fmt
+        run: make fmt-check
+      - name: validate
+        id: validate
+        run: make init validate-terraform
       - name: plan
+        id: plan
         if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          set -e
-          make plan
-      - name: apply
-        if: ${{ github.event_name == 'push' }}
-        run: |
-          set -e
-          make apply-ci
+        run: make plan
+      - uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            <details><summary>Validation Output</summary>
+
+            \`\`\`\n
+            ${{ steps.validate.outputs.stdout }}
+            \`\`\`
+
+            </details>
+
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+            
+            <details><summary>Show Plan</summary>
+            
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+            
+            </details>
+            
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
+              
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+      # - name: apply
+      #   if: ${{ github.event_name == 'push' }}
+      #   run: |
+      #     set -e
+      #     make apply-ci
