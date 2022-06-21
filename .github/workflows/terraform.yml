@@ -70,6 +70,7 @@ jobs:
       - name: validate terraform
         if: ${{ github.event_name == 'pull_request' }}
         run: |
+          printenv | grep AWS
           set -e
           sudo make fmt-check
           sudo make init validate-terraform
