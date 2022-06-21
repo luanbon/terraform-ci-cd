@@ -63,8 +63,8 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets[needs.set_environment.outputs.aws_key] }}
-          aws-secret-access-key: ${{ secrets[needs.set_environment.outputs.aws_key_secret] }}"
+          aws-access-key-id: ${{ secrets.NONPROD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.NONPROD_AWS_SECRET_ACCESS_KEY }}"
           aws-region: us-east-1
       - name: validate terraform
         if: ${{ github.event_name == 'pull_request' }}
