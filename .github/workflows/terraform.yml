@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-      contents: read
+      contents: write
     needs: set_environment
     # environment: 
     #   name: ${{ needs.set_environment.outputs.stage }}
