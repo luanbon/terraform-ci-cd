@@ -1,22 +1,19 @@
 STAGE?=develop
 
-apply console destroy graph plan output providers show refresh:
+init apply console destroy graph plan output providers show refresh:
 	cd variables/$(STAGE) && terragrunt $@
 
 fmt:
 	@cd stack/ && terraform fmt
 
-init:
-	cd variables/$(STAGE) && terragrunt $@
-
 apply-ci:
 	cd variables/$(STAGE) && terragrunt apply -auto-approve
 
-validate-terraform:
-	@cd $(shell make init 2>&1 |grep "working directory to" |awk '{print $$8}') && terraform validate
+validate:
+	@cd $(shell make init 2>&1 | grep "working directory to" | awk '{print $$8}') && terraform validate
 
 fmt-check:
-	@cd stack/ && terraform fmt -check || (echo "Failed: Fix format of above files\nPlease fix this error by running : make fmt" ; false)
+	@cd stack/ && terraform fmt -check
 
 lint:
 	@cd stack/ && tflint --enable-rule=terraform_unused_declarations
