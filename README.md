@@ -4,7 +4,6 @@
 * You must have an IAM user and an IAM access key pair associated with this user.
 * You must have the following programs installed.
     * `awscli`
-    * `jq`
     * `terraform`
     * `terragrunt`
     * `terraenv`

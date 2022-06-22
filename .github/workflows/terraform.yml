@@ -1,67 +1,139 @@
-name: Terraform CI/CD
+name: terraform
 on:
   workflow_dispatch:
   push:
-      branches:
+    branches:
       - develop
       - qa
       - staging
       - prod
-      paths-ignore:
-      - '.images/**'
-      - '.github/**'
+    paths-ignore:
+      - ".images/**"
   pull_request:
-      branches:
-      - 'feature/**'
-      - 'hotfix/**'
-      - 'bugfix/**'
-      paths-ignore:
-      - '.images/**'
-      - '.github/**'
+    branches:
+      - develop
+      - qa
+      - staging
+      - prod
+      - "feature/**"
+      - "hotfix/**"
+      - "bugfix/**"
+    paths-ignore:
+      - ".images/**"
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+      issues: write
+    env:
+      BRANCH: ${{ github.base_ref || github.ref_name }}
     steps:
-      - uses: mad9000/actions-find-and-replace-string@2
-        name: get branch name
-        id: get_branch_name
+      - name: Get Stage
+        run: |
+          if [ $BRANCH == 'master' ]; then
+            echo "STAGE=production" >> $GITHUB_ENV
+          else
+             echo "STAGE=$BRANCH" >> $GITHUB_ENV
+          fi
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Configure non prod AWS credentials
+        if: ${{ env.STAGE != 'production' }}
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          source: ${{ github.ref }}
-          find: 'refs/heads/'
-          replace: ''
-      - name: environment variables configuration for non-prod
-        if: ${{ steps.get_branch_name.outputs.value != 'production' }}
-        run: |
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.NONPROD_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.NONPROD_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
-          echo "TEST=BLEVISK" >> $GITHUB_ENV
-          echo "STAGE=${{ steps.get_branch_name.outputs.value }}" >> $GITHUB_ENV
-      - name: environment variables configuration for non-prod
-        if: ${{ steps.get_branch_name.outputs.value == 'production' }}
-        run: |
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
-      # - name: display variables
-      #   if:  env.AWS_ACCESS_KEY_ID != null && env.AWS_SECRET_ACCESS_KEY != null
-      #   run: |
-      #     echo "$AWS_ACCESS_KEY_ID"
-      #     echo "$TEST"
-      #     echo "$STAGE"
-      - name: install dependencies
+          role-to-assume: ${{ secrets.NON_PROD_GITHUB_ACTIONS_ROLE }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+      - name: Configure prod AWS credentials
+        if: ${{ env.STAGE == 'production' }}
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.PROD_GITHUB_ACTIONS_ROLE }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+      - name: Install Dependencies
         run: |
           sudo apt update && sudo apt install python3-pip python3-setuptools jq
           sudo pip3 install terraenv awscli
-          sudo terraenv terraform install
-          sudo terraenv terragrunt install
-      - name: validate terraform
+          terraenv terragrunt install
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 0.14.6
+      - name: Terraform Format
+        id: fmt
+        run: make fmt-check
+        continue-on-error: true
+      - name: Terraform Init
+        id: init
+        run: make init
+      - name: Terraform Validate
+        id: validate
+        run: make init validate
+      - name: Terraform Plan
+        id: plan
         if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          set -e
-          make fmt-check
-          make init validate-terraform
-      - name: plan
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          set -e
-          make plan
+        run: make plan-ci
+      - name: Comment PR
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // 1. Retrieve existing bot comments for the PR
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            })
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('Terraform Format and Style')
+            })
+
+            // 2. Prepare format of the comment
+            const output = `#### Terraform Format and Style 🖌 \`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️ \`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖 \`${{ steps.validate.outcome }}\`
+            <details><summary>Validation Output</summary>
+
+            \`\`\`\n
+            ${{ steps.validate.outputs.stdout }}
+            \`\`\`
+
+            </details>
+
+            #### Terraform Plan 📖 \`${{ steps.plan.outcome }}\`
+            
+            <details><summary>Show Plan</summary>
+            
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+            
+            </details>
+            
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
+            
+            // 3. If we have a comment, update it, otherwise create a new one
+            if (botComment) {
+              github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: output
+              })
+            } else {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              })
+            }
+      - name: Terraform Apply
+        if: ${{ github.event_name == 'push' }}
+        run: make apply-ci
