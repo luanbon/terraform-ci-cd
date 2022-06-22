@@ -33,10 +33,10 @@ jobs:
     steps:
       - name: Get Stage
         run: |
-          if [[ ${{ env.BRANCH }} == 'master']]; then
+          if [ $BRANCH == 'master' ]; then
             echo "STAGE=production" >> $GITHUB_ENV
           else
-            echo "STAGE=$BRANCH" >> $GITHUB_ENV
+             echo "STAGE=$BRANCH" >> $GITHUB_ENV
           fi
       - name: Checkout
         uses: actions/checkout@v3
