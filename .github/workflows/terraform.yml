@@ -29,6 +29,7 @@ jobs:
       id-token: write
       contents: write
       issues: write
+      pull-requests: write
     env:
       BRANCH: ${{ github.base_ref || github.ref_name }}
     steps:
