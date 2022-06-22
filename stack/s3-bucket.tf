@@ -3,6 +3,7 @@ resource "aws_s3_bucket" "bucket" {
 
   tags = {
     Name        = var.name
+    Namespace   = var.namespace
     Environment = var.stage
   }
 }
