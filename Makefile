@@ -4,7 +4,7 @@ init apply console destroy graph plan output providers show refresh:
 	cd variables/$(STAGE) && terragrunt $@
 
 plan-ci:
-	cd variables/$(STAGE) && terragrunt plan -no-color
+	cd variables/$(STAGE) && terragrunt plan -no-color -detailed-exitcode -input=false
 
 fmt:
 	@cd stack/ && terraform fmt
