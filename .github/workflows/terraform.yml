@@ -36,7 +36,7 @@ jobs:
     steps:
       - name: Get Stage
         run: |
-          if [ $BRANCH == 'master' || $BRANCH == 'main' ]; then
+          if [ $BRANCH == 'master' ] || [ $BRANCH == 'main' ]; then
             echo "STAGE=production" >> $GITHUB_ENV
           else
              echo "STAGE=$BRANCH" >> $GITHUB_ENV
