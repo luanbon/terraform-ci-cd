@@ -42,11 +42,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Configure non prod AWS credentials
-        if: ${{ env.STAGE != 'production' }}
+        if: env.STAGE != 'production'
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: ${{ secrets.NON_PROD_GITHUB_ACTIONS_ROLE }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          aws-region: us-east-1
+          role-session-name: ln-terraform-compute-terraform-ci
       - name: Configure prod AWS credentials
         if: ${{ env.STAGE == 'production' }}
         uses: aws-actions/configure-aws-credentials@v1
