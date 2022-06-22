@@ -167,3 +167,4 @@ jobs:
           git add *.lock.hcl
           git commit -m "Persisting lock file"
           git push
+        continue-on-error: true
