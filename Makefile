@@ -10,10 +10,10 @@ fmt:
 	@cd stack/ && terraform fmt
 
 apply-ci:
-	cd variables/$(STAGE) && terragrunt apply -auto-approve
+	cd variables/$(STAGE) && terragrunt apply -auto-approve -no-color
 
 validate:
-	@cd $(shell make init 2>&1 | grep "working directory to" | awk '{print $$8}') && terraform validate
+	@cd $(shell make init 2>&1 | grep "working directory to" | awk '{print $$8}') && terraform validate -no-color
 
 fmt-check:
 	@cd stack/ && terraform fmt -check

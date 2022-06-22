@@ -1,4 +1,4 @@
-name: Terraform CI/CD
+name: terraform
 on:
   workflow_dispatch:
   push:
@@ -22,49 +22,43 @@ on:
       - ".images/**"
 
 jobs:
-  set_environment:
-    env:
-      BRANCH_NAME: ${{ github.base_ref || github.ref_name }}
-    outputs:
-      stage: ${{ steps.check_environment.outputs.stage }}
-      aws_key: ${{ steps.check_environment.outputs.aws_key }}
-      aws_key_secret: ${{ steps.check_environment.outputs.aws_key_secret }}
-    runs-on: ubuntu-latest
-    steps:
-    - id: check_environment
-      run: |
-        echo "::set-output name=stage::${{ env.BRANCH_NAME }}"
-
-        if [[ env.BRANCH_NAME != 'production' ]]; then
-          echo "::set-output name=aws_key::NONPROD_AWS_ACCESS_KEY_ID"
-          echo "::set-output name=aws_key_secret::NONPROD_AWS_SECRET_ACCESS_KEY"
-        else
-          echo "::set-output name=aws_key::AWS_ACCESS_KEY_ID"
-          echo "::set-output name=aws_key_secret::AWS_SECRET_ACCESS_KEY"
-        fi
   terraform:
     runs-on: ubuntu-latest
-    permissions: write-all
-    needs: set_environment
-    # environment: 
-    #   name: ${{ needs.set_environment.outputs.stage }}
+    permissions:
+      id-token: write
+      contents: write
+      issues: write
     env:
-      STAGE: ${{ needs.set_environment.outputs.stage }}
+      BRANCH: ${{ github.base_ref || github.ref_name }}
     steps:
-      # Test V3
+      - name: Get Stage
+        run: |
+          if [[ $BRANCH == 'master']]; then
+            echo "STAGE=production" >> $GITHUB_ENV
+          else
+            echo "STAGE=$BRANCH" >> $GITHUB_ENV
+          fi
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Configure AWS Credentials
+      - name: Configure non prod AWS credentials
+        if: ${{ env.STAGE != 'production' }}
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: us-east-1
+          role-to-assume: ${{ secrets.NON_PROD_GITHUB_ACTIONS_ROLE }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+      - name: Configure prod AWS credentials
+        if: ${{ env.STAGE == 'production' }}
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.PROD_GITHUB_ACTIONS_ROLE }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
       - name: Install Dependencies
         run: |
           sudo apt update && sudo apt install python3-pip python3-setuptools jq
           sudo pip3 install terraenv awscli
           terraenv terragrunt install
-      - uses: hashicorp/setup-terraform@v2
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 0.14.6
       - name: Terraform Format
@@ -77,11 +71,12 @@ jobs:
       - name: Terraform Validate
         id: validate
         run: make init validate
-      - name: plan
+      - name: Terraform Plan
         id: plan
         if: ${{ github.event_name == 'pull_request' }}
         run: make plan-ci
-      - uses: actions/github-script@v6
+      - name: Comment PR
+        uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
         env:
           PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
@@ -99,9 +94,9 @@ jobs:
             })
 
             // 2. Prepare format of the comment
-            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
-            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            const output = `#### Terraform Format and Style 🖌 \`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️ \`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖 \`${{ steps.validate.outcome }}\`
             <details><summary>Validation Output</summary>
 
             \`\`\`\n
@@ -110,7 +105,7 @@ jobs:
 
             </details>
 
-            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+            #### Terraform Plan 📖 \`${{ steps.plan.outcome }}\`
             
             <details><summary>Show Plan</summary>
             
@@ -138,8 +133,6 @@ jobs:
                 body: output
               })
             }
-      # - name: apply
-      #   if: ${{ github.event_name == 'push' }}
-      #   run: |
-      #     set -e
-      #     make apply-ci
+      - name: Terraform Apply
+        if: ${{ github.event_name == 'push' }}
+        run: make apply-ci
