@@ -5,6 +5,7 @@ resource "aws_s3_bucket" "bucket" {
     Name        = var.name
     Namespace   = var.namespace
     Environment = var.stage
+    Project     = "Sample"
   }
 }
 
