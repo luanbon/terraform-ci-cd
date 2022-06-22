@@ -162,9 +162,11 @@ jobs:
       - name: Persist Lock File
         if: ${{ github.event_name == 'push' }}
         run: |
-          git config --global user.name 'Live Nation'
-          git config --global user.email 'devops@livenation.com'
-          git add *.lock.hcl
-          git commit -m "Persisting lock file"
-          git push
+          if [[ `git status --porcelain` ]]; then
+            git config --global user.name 'Live Nation'
+            git config --global user.email 'devops@livenation.com'
+            git add *.lock.hcl
+            git commit -m "Persisting lock file"
+            git push
+          fi
         continue-on-error: true
