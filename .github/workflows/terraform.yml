@@ -50,7 +50,7 @@ jobs:
           aws-region: us-east-1
           role-session-name: ln-terraform-compute-terraform-ci
       - name: Configure prod AWS credentials
-        if: ${{ env.STAGE == 'production' }}
+        if: env.STAGE == 'production'
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: ${{ secrets.PROD_GITHUB_ACTIONS_ROLE }}
