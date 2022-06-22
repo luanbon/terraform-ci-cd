@@ -1,6 +1,17 @@
 name: terraform
 on:
   workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Stage'     
+        required: true
+        default: 'develop' 
+        type: choice
+        options:
+          - develop
+          - qa
+          - staging 
+          - production
   push:
     branches:
       - develop
@@ -32,16 +43,21 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+      repository-projects: write
     env:
       BRANCH: ${{ github.base_ref || github.ref_name }}
     steps:
       - name: Get Stage
+        if: github.event_name != 'workflow_dispatch'
         run: |
           if [ $BRANCH == 'master' ] || [ $BRANCH == 'main' ]; then
             echo "STAGE=production" >> $GITHUB_ENV
           else
              echo "STAGE=$BRANCH" >> $GITHUB_ENV
           fi
+      - name: Get Stage From Input
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "STAGE=${{ inputs.stage }}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v3
       - name: Configure non prod AWS credentials
@@ -79,8 +95,9 @@ jobs:
         run: make init validate
       - name: Terraform Plan
         id: plan
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
         run: make plan-ci
+        continue-on-error: true
       - name: Comment PR
         uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
@@ -140,5 +157,13 @@ jobs:
               })
             }
       - name: Terraform Apply
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' && steps.plan.outputs.exitcode == 2 }}
         run: make apply-ci
+      - name: Persist Lock File
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          git config --global user.name 'Live Nation'
+          git config --global user.email 'devops@livenation.com'
+          git add *.lock.hcl
+          git commit -m "Persisting lock file"
+          git push
