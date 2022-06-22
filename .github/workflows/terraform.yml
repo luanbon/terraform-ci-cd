@@ -159,7 +159,7 @@ jobs:
       - name: Terraform Apply
         if: ${{ github.event_name == 'push' && steps.plan.outputs.exitcode == 2 }}
         run: make apply-ci
-      - name: Comment Lock File
+      - name: Persist Lock File
         if: ${{ github.event_name == 'push' }}
         run: |
           git config --global user.name 'Live Nation'
